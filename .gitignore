@@ -33,6 +33,12 @@ migrate_working_dir/
 .pub/
 /build/
 
+# Environment variables
+.env
+.env.local
+.env.production
+.env.staging
+
 # Symbolication related
 app.*.symbols
 
