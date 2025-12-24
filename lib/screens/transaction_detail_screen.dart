@@ -9,6 +9,7 @@ import '../models/transaction.dart';
 import '../models/customer.dart';
 import 'add_payment_screen.dart';
 import '../widgets/whatsapp_preview_dialog.dart';
+import '../widgets/full_screen_image_viewer.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
   final Transaction transaction;
@@ -176,66 +177,29 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     ),
                   ),
 
-                  // Foto Nota
-                  if (transaction.fotoNotaUrl != null && transaction.fotoNotaUrl!.isNotEmpty)
+                  // Tombol Lihat Foto
+                  if (transaction.fotoNotaUrl != null && 
+                      transaction.fotoNotaUrl!.isNotEmpty && 
+                      transaction.fotoNotaUrl != 'null')
                     Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.image, color: Colors.grey.shade600),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Foto Nota',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FullScreenImageViewer(
+                                imageUrl: '${dotenv.env['APPWRITE_ENDPOINT']}/storage/buckets/${dotenv.env['APPWRITE_BUCKET_ID']}/files/${transaction.fotoNotaUrl}/view?project=${dotenv.env['APPWRITE_PROJECT_ID']}',
+                                title: 'Foto Nota - ${transaction.deskripsi}',
                               ),
-                              const SizedBox(height: 12),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.network(
-                                  '${dotenv.env['APPWRITE_ENDPOINT']}/storage/buckets/${dotenv.env['APPWRITE_BUCKET_ID']}/files/${transaction.fotoNotaUrl}/view?project=${dotenv.env['APPWRITE_PROJECT_ID']}',
-                                  width: double.infinity,
-                                  height: 200,
-                                  fit: BoxFit.cover,
-                                  loadingBuilder: (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return Container(
-                                      height: 200,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade100,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Center(
-                                        child: CircularProgressIndicator(),
-                                      ),
-                                    );
-                                  },
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      height: 200,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade100,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Center(
-                                        child: Icon(Icons.error, color: Colors.grey),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.image),
+                        label: const Text('Lihat Foto Nota'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          side: BorderSide(color: Colors.grey.shade400),
                         ),
                       ),
                     ),
@@ -458,7 +422,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => AddPaymentScreen(
-                          transactionId: widget.transaction.id,
+                          transaction: widget.transaction,
                         ),
                       ),
                     );
@@ -522,7 +486,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         context,
         MaterialPageRoute(
           builder: (context) => AddPaymentScreen(
-            transactionId: widget.transaction.id,
+            transaction: widget.transaction,
             editPayment: payment,
           ),
         ),
@@ -555,6 +519,11 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         if (userId != null) {
           await Provider.of<PaymentProvider>(context, listen: false)
               .deletePayment(payment.id, widget.transaction.id, userId);
+          
+          // Update sisa dan status transaksi setelah delete payment
+          await Provider.of<TransactionProvider>(context, listen: false)
+              .updateSisaDanStatus(widget.transaction.id, userId);
+          
           await _refresh();
         }
       }

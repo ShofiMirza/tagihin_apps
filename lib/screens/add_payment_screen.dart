@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/payment.dart';
+import '../models/transaction.dart';
 import '../providers/payment_provider.dart';
 import '../providers/auth_provider.dart';
 
 class AddPaymentScreen extends StatefulWidget {
-  final String transactionId;
+  final Transaction transaction;
   final Payment? editPayment;
-  const AddPaymentScreen({super.key, required this.transactionId, this.editPayment});
+  const AddPaymentScreen({super.key, required this.transaction, this.editPayment});
 
   @override
   State<AddPaymentScreen> createState() => _AddPaymentScreenState();
@@ -44,12 +45,29 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
         return;
       }
 
+      final nominal = int.tryParse(_nominalController.text) ?? 0;
+      
+      // Validasi: nominal tidak boleh melebihi sisa utang (kecuali saat edit)
+      if (widget.editPayment == null && nominal > widget.transaction.sisa) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Nominal pembayaran (Rp ${_formatNumber(nominal)}) '
+              'melebihi sisa utang (Rp ${_formatNumber(widget.transaction.sisa)})'
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+
       final payment = Payment(
         id: widget.editPayment?.id ?? '',
         userId: widget.editPayment?.userId ?? userId,
-        transactionId: widget.transactionId,
+        transactionId: widget.transaction.id,
         tanggalPay: widget.editPayment?.tanggalPay ?? DateTime.now(),
-        nominal: int.tryParse(_nominalController.text) ?? 0,
+        nominal: nominal,
         metode: _metode,
       );
       if (widget.editPayment != null) {
@@ -60,6 +78,13 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
       }
       Navigator.pop(context);
     }
+  }
+
+  String _formatNumber(int number) {
+    return number.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
   }
 
   @override
