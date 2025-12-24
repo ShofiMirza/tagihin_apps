@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tagihin_apps/models/customer.dart';
 import '../providers/customer_provider.dart';
+import '../providers/transaction_provider.dart';
+import '../providers/payment_provider.dart';
 import '../providers/auth_provider.dart';
 import 'add_customer_screen.dart';
-import 'customer_detail_screen.dart';
 import 'customer_transaction_list_screen.dart';
 
 class CustomerListScreen extends StatefulWidget {
@@ -48,7 +49,10 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      await Provider.of<CustomerProvider>(context, listen: false).fetchCustomers();
+      final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+      if (userId != null) {
+        await Provider.of<CustomerProvider>(context, listen: false).fetchCustomers(userId);
+      }
     } catch (e) {
       print('Error fetching customers: $e');
     }
@@ -245,10 +249,13 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
         ),
       );
       if (confirm == true) {
-        await Provider.of<CustomerProvider>(context, listen: false)
-            .deleteCustomer(customer.id);
-        // Refresh otomatis karena data berubah
-        await _refresh();
+        final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+        if (userId != null) {
+          await Provider.of<CustomerProvider>(context, listen: false)
+              .deleteCustomer(customer.id, userId);
+          // Refresh otomatis karena data berubah
+          await _refresh();
+        }
       }
     }
   }
@@ -262,6 +269,12 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
+              // Clear all provider data
+              Provider.of<CustomerProvider>(context, listen: false).clear();
+              Provider.of<TransactionProvider>(context, listen: false).clear();
+              Provider.of<PaymentProvider>(context, listen: false).clear();
+              
+              // Logout
               Provider.of<AuthProvider>(context, listen: false).logout();
               Navigator.pushReplacementNamed(context, '/login');
             },

@@ -13,11 +13,14 @@ class PaymentService {
     _databases = Databases(_client);
   }
 
-  Future<List<Document>> getPaymentsByTransaction(String transactionId) async {
+  Future<List<Document>> getPaymentsByTransaction(String transactionId, String userId) async {
     final response = await _databases.listDocuments(
       databaseId: dotenv.env['APPWRITE_DATABASE_ID']!,
       collectionId: dotenv.env['APPWRITE_COLLECTION_PAYMENTS']!,
-      queries: [Query.equal('transactionId', transactionId)],
+      queries: [
+        Query.equal('transactionId', transactionId),
+        Query.equal('userId', userId), // Filter by userId
+      ],
     );
     return response.documents;
   }
@@ -48,13 +51,14 @@ class PaymentService {
     );
   }
 
-  // Method baru untuk fetch semua payments
-  Future<List<Document>> getAllPayments() async {
+  // Method untuk fetch semua payments dengan filter userId
+  Future<List<Document>> getAllPayments(String userId) async {
     try {
       final response = await _databases.listDocuments(
         databaseId: dotenv.env['APPWRITE_DATABASE_ID']!,
         collectionId: dotenv.env['APPWRITE_COLLECTION_PAYMENTS']!,
         queries: [
+          Query.equal('userId', userId), // Filter by userId
           Query.orderDesc('\$createdAt'),
           Query.limit(1000),
         ],
@@ -66,10 +70,10 @@ class PaymentService {
     }
   }
 
-  Future<void> deletePaymentsByTransaction(String transactionId) async {
+  Future<void> deletePaymentsByTransaction(String transactionId, String userId) async {
     try {
       // Get all payments for this transaction
-      final payments = await getPaymentsByTransaction(transactionId);
+      final payments = await getPaymentsByTransaction(transactionId, userId);
 
       // Delete each payment
       for (var payment in payments) {

@@ -5,10 +5,9 @@ import 'providers/customer_provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/payment_provider.dart';
 import 'providers/auth_provider.dart';
-import 'screens/customer_list_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/main_navigation_screen.dart'; // <-- tambahkan ini
+import 'screens/main_navigation_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -107,6 +106,11 @@ class MyApp extends StatelessWidget {
               ),
             ),
             home: _buildHomeScreen(auth),
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/register': (context) => const RegisterScreen(),
+              '/home': (context) => const MainNavigationScreen(),
+            },
           );
         },
       ),

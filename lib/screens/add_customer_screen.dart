@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/customer.dart';
 import '../providers/customer_provider.dart';
+import '../providers/auth_provider.dart';
 
 class AddCustomerScreen extends StatefulWidget {
   final Customer? editCustomer;
@@ -43,8 +44,19 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _loading = true);
 
+      final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+      if (userId == null) {
+        setState(() => _loading = false);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: User tidak terautentikasi')),
+        );
+        return;
+      }
+
       final customer = Customer(
         id: widget.editCustomer?.id ?? '',
+        userId: widget.editCustomer?.userId ?? userId,
         nama: _namaController.text,
         noHp: _noHpController.text,
         alamat: _alamatController.text,
@@ -52,9 +64,9 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       );
       
       if (widget.editCustomer != null) {
-        await Provider.of<CustomerProvider>(context, listen: false).updateCustomer(customer);
+        await Provider.of<CustomerProvider>(context, listen: false).updateCustomer(customer, userId);
       } else {
-        await Provider.of<CustomerProvider>(context, listen: false).addCustomer(customer);
+        await Provider.of<CustomerProvider>(context, listen: false).addCustomer(customer, userId);
       }
 
       setState(() => _loading = false);

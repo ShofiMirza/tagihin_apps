@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/payment_provider.dart';
 import '../providers/customer_provider.dart';
 import '../providers/transaction_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/payment.dart';
 import '../models/customer.dart';
 import '../models/transaction.dart';
@@ -27,16 +28,38 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
     _refresh();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _refresh() async {
-    setState(() => _loading = true);
+    if (!mounted) return;
+    
     try {
-      await Provider.of<PaymentProvider>(context, listen: false).fetchAllPayments();
-      await Provider.of<CustomerProvider>(context, listen: false).fetchCustomers();
-      await Provider.of<TransactionProvider>(context, listen: false).fetchAllTransactions();
+      if (!mounted) return;
+      setState(() => _loading = true);
+      
+      if (!mounted) return;
+      final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+      
+      if (userId != null && mounted) {
+        await Provider.of<PaymentProvider>(context, listen: false).fetchAllPayments(userId);
+        if (!mounted) return;
+        await Provider.of<CustomerProvider>(context, listen: false).fetchCustomers(userId);
+        if (!mounted) return;
+        await Provider.of<TransactionProvider>(context, listen: false).fetchAllTransactions(userId);
+      }
     } catch (e) {
-      print('Error refreshing data: $e');
+      if (mounted) {
+        print('Error refreshing data: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
-    setState(() => _loading = false);
   }
 
   @override
@@ -170,13 +193,13 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                                 final transaction = transactionProvider.allTransactions.firstWhere(
                                   (t) => t.id == payment.transactionId,
                                   orElse: () => Transaction(
-                                    id: '', customerId: '', tanggal: DateTime.now(),
+                                    id: '', userId: '', customerId: '', tanggal: DateTime.now(),
                                     deskripsi: '', total: 0, dp: 0, sisa: 0, status: '',
                                   ),
                                 );
                                 return c.id == transaction.customerId;
                               },
-                              orElse: () => Customer(id: '', nama: '', noHp: '', alamat: '', catatan: ''),
+                              orElse: () => Customer(id: '', userId: '', nama: '', noHp: '', alamat: '', catatan: ''),
                             );
                             return customer.nama.toLowerCase().contains(_searchQuery.toLowerCase()) ||
                                    payment.nominal.toString().contains(_searchQuery);
@@ -266,7 +289,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
     final transaction = transactionProvider.allTransactions.firstWhere(
       (t) => t.id == payment.transactionId,
       orElse: () => Transaction(
-        id: '', customerId: '', tanggal: DateTime.now(),
+        id: '', userId: '', customerId: '', tanggal: DateTime.now(),
         deskripsi: 'Transaksi tidak ditemukan', total: 0, dp: 0, sisa: 0, status: '',
       ),
     );
@@ -274,7 +297,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
     // Find customer
     final customer = customerProvider.customers.firstWhere(
       (c) => c.id == transaction.customerId,
-      orElse: () => Customer(id: '', nama: 'Customer tidak ditemukan', noHp: '', alamat: '', catatan: ''),
+      orElse: () => Customer(id: '', userId: '', nama: 'Customer tidak ditemukan', noHp: '', alamat: '', catatan: ''),
     );
 
     return Card(
@@ -504,11 +527,5 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
       'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 }

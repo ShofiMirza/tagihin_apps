@@ -4,11 +4,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/payment_provider.dart';
 import '../providers/customer_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/transaction.dart';
-import '../models/customer.dart'; // <-- tambahkan import ini
+import '../models/customer.dart';
 import 'add_payment_screen.dart';
 import '../widgets/whatsapp_preview_dialog.dart';
-import '../services/whatsapp_service.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
   final Transaction transaction;
@@ -29,12 +29,18 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   }
 
   Future<void> _refresh() async {
+    if (!mounted) return;
     setState(() => _loading = true);
-    await Provider.of<PaymentProvider>(context, listen: false)
-        .fetchPayments(widget.transaction.id);
-    await Provider.of<TransactionProvider>(context, listen: false)
-        .fetchTransactions(widget.transaction.customerId);
-    setState(() => _loading = false);
+    final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+    if (userId != null) {
+      await Provider.of<PaymentProvider>(context, listen: false)
+          .fetchPayments(widget.transaction.id, userId);
+      await Provider.of<TransactionProvider>(context, listen: false)
+          .fetchTransactions(widget.transaction.customerId, userId);
+    }
+    if (mounted) {
+      setState(() => _loading = false);
+    }
   }
 
   @override
@@ -545,9 +551,12 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         ),
       );
       if (confirm == true) {
-        await Provider.of<PaymentProvider>(context, listen: false)
-            .deletePayment(payment.id, widget.transaction.id);
-        await _refresh();
+        final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+        if (userId != null) {
+          await Provider.of<PaymentProvider>(context, listen: false)
+              .deletePayment(payment.id, widget.transaction.id, userId);
+          await _refresh();
+        }
       }
     }
   }
@@ -562,6 +571,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       (c) => c.id == widget.transaction.customerId,
       orElse: () => Customer(
         id: '', 
+        userId: '',
         nama: 'Customer tidak ditemukan', 
         noHp: '', 
         alamat: '', 

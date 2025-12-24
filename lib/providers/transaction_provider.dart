@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/transaction.dart';
 import '../services/transaction_service.dart';
 import '../services/payment_service.dart';
 import '../models/payment.dart';
-import 'package:appwrite/appwrite.dart';
 
 class TransactionProvider with ChangeNotifier {
   final TransactionService _service = TransactionService();
@@ -16,16 +14,16 @@ class TransactionProvider with ChangeNotifier {
   List<Transaction> _allTransactions = [];
   List<Transaction> get allTransactions => _allTransactions;
 
-  Future<void> fetchTransactions(String customerId) async {
-    final docs = await _service.getTransactionsByCustomer(customerId);
+  Future<void> fetchTransactions(String customerId, String userId) async {
+    final docs = await _service.getTransactionsByCustomer(customerId, userId);
     _transactions = docs.map((doc) => Transaction.fromJson(doc.data)).toList();
     notifyListeners();
   }
 
   // Method untuk fetch semua transactions
-  Future<void> fetchAllTransactions() async {
+  Future<void> fetchAllTransactions(String userId) async {
     try {
-      final response = await _service.getAllTransactions();
+      final response = await _service.getAllTransactions(userId);
 
       _allTransactions = response.map((doc) => Transaction.fromJson(doc.data)).toList();
       notifyListeners();
@@ -38,27 +36,27 @@ class TransactionProvider with ChangeNotifier {
 
   Future<void> addTransaction(Transaction trx) async {
     await _service.addTransaction(trx.toJson());
-    await fetchTransactions(trx.customerId);
+    await fetchTransactions(trx.customerId, trx.userId);
   }
 
   Future<void> updateTransaction(Transaction trx) async {
     await _service.updateTransaction(trx.id, trx.toJson());
-    await fetchTransactions(trx.customerId);
+    await fetchTransactions(trx.customerId, trx.userId);
   }
 
-  Future<void> deleteTransaction(String id, String customerId) async {
+  Future<void> deleteTransaction(String id, String customerId, String userId) async {
     // Hapus semua payment terkait transaksi ini
-    await _paymentService.deletePaymentsByTransaction(id);
+    await _paymentService.deletePaymentsByTransaction(id, userId);
     // Hapus transaksi
     await _service.deleteTransaction(id);
-    await fetchTransactions(customerId);
+    await fetchTransactions(customerId, userId);
   }
 
-  Future<void> updateSisaDanStatus(String transactionId) async {
+  Future<void> updateSisaDanStatus(String transactionId, String userId) async {
     final trxDoc = await _service.getTransactionById(transactionId);
     final trx = Transaction.fromJson(trxDoc.data);
 
-    final payments = await _paymentService.getPaymentsByTransaction(transactionId);
+    final payments = await _paymentService.getPaymentsByTransaction(transactionId, userId);
     final totalBayar = payments.fold<int>(0, (sum, doc) => sum + Payment.fromJson(doc.data).nominal);
 
     final sisa = trx.total - totalBayar;
@@ -69,7 +67,13 @@ class TransactionProvider with ChangeNotifier {
       'status': status,
     });
 
-    await fetchTransactions(trx.customerId);
+    await fetchTransactions(trx.customerId, userId);
+    notifyListeners();
+  }
+
+  void clear() {
+    _transactions = [];
+    _allTransactions = [];
     notifyListeners();
   }
 }

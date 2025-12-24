@@ -13,10 +13,14 @@ class AppwriteService {
     database = Databases(client);
   }
 
-  Future<List<Map<String, dynamic>>> getCustomers() async {
+  // Fetch customers dengan filter userId
+  Future<List<Map<String, dynamic>>> getCustomers(String userId) async {
     final response = await database.listDocuments(
       databaseId: dotenv.env['APPWRITE_DATABASE_ID']!,
-      collectionId: dotenv.env['APPWRITE_COLLECTION_CUSTOMER']!, // sesuai .env Anda
+      collectionId: dotenv.env['APPWRITE_COLLECTION_CUSTOMER']!,
+      queries: [
+        Query.equal('userId', userId), // Filter by userId
+      ],
     );
     return response.documents.map((doc) => doc.data).toList();
   }
@@ -25,7 +29,7 @@ class AppwriteService {
     await database.createDocument(
       databaseId: dotenv.env['APPWRITE_DATABASE_ID']!,
       collectionId: dotenv.env['APPWRITE_COLLECTION_CUSTOMER']!,
-      documentId: 'unique()', // biar auto id
+      documentId: 'unique()',
       data: data,
     );
   }

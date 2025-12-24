@@ -1,5 +1,6 @@
 class Transaction {
   final String id;
+  final String userId; // User ID pemilik transaksi
   final String customerId;
   final DateTime tanggal;
   final String deskripsi;
@@ -11,6 +12,7 @@ class Transaction {
 
   Transaction({
     required this.id,
+    required this.userId,
     required this.customerId,
     required this.tanggal,
     required this.deskripsi,
@@ -24,6 +26,7 @@ class Transaction {
   factory Transaction.fromJson(Map<String, dynamic> json) {
     return Transaction(
       id: json['\$id'] ?? '',
+      userId: json['userId'] ?? '',
       customerId: json['customerId'] ?? '',
       tanggal: DateTime.parse(json['tanggal']),
       deskripsi: json['deskripsi'] ?? '',
@@ -36,6 +39,7 @@ class Transaction {
   }
 
   Map<String, dynamic> toJson() => {
+    'userId': userId,
     'customerId': customerId,
     'tanggal': tanggal.toIso8601String(),
     'deskripsi': deskripsi,

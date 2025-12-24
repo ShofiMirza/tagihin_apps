@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
+import '../providers/auth_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:appwrite/appwrite.dart';
 // import 'package:appwrite/models.dart' as models;
@@ -79,8 +80,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       final dp = int.tryParse(_dpController.text) ?? 0;
       final sisa = total - dp;
 
+      final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+      if (userId == null) {
+        setState(() => _loading = false);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: User tidak terautentikasi')),
+        );
+        return;
+      }
+
       final trx = Transaction(
         id: widget.editTransaction?.id ?? '',
+        userId: widget.editTransaction?.userId ?? userId,
         customerId: widget.customerId,
         tanggal: widget.editTransaction?.tanggal ?? DateTime.now(),
         deskripsi: _deskripsiController.text,

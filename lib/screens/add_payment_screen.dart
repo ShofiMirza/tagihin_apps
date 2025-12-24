@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/payment.dart';
 import '../providers/payment_provider.dart';
+import '../providers/auth_provider.dart';
 
 class AddPaymentScreen extends StatefulWidget {
   final String transactionId;
@@ -35,18 +36,27 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
 
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
+      final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+      if (userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: User tidak terautentikasi')),
+        );
+        return;
+      }
+
       final payment = Payment(
         id: widget.editPayment?.id ?? '',
+        userId: widget.editPayment?.userId ?? userId,
         transactionId: widget.transactionId,
         tanggalPay: widget.editPayment?.tanggalPay ?? DateTime.now(),
         nominal: int.tryParse(_nominalController.text) ?? 0,
         metode: _metode,
       );
       if (widget.editPayment != null) {
-        await Provider.of<PaymentProvider>(context, listen: false).updatePayment(payment);
+        await Provider.of<PaymentProvider>(context, listen: false).updatePayment(payment, userId);
       } else {
         await Provider.of<PaymentProvider>(context, listen: false)
-            .addPayment(payment, context);
+            .addPayment(payment, context, userId);
       }
       Navigator.pop(context);
     }

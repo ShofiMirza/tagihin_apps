@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/customer.dart';
 import '../providers/customer_provider.dart';
+import '../providers/auth_provider.dart';
 import 'add_customer_screen.dart';
 import 'customer_transaction_list_screen.dart';
 
@@ -42,8 +43,11 @@ class CustomerDetailScreen extends StatelessWidget {
                 ),
               );
               if (confirm == true) {
-                await Provider.of<CustomerProvider>(context, listen: false).deleteCustomer(customer.id);
-                Navigator.pop(context); // kembali ke daftar customer
+                final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+                if (userId != null) {
+                  await Provider.of<CustomerProvider>(context, listen: false).deleteCustomer(customer.id, userId);
+                  Navigator.pop(context); // kembali setelah hapus
+                }
               }
             },
           ),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/customer_provider.dart';
+import '../providers/transaction_provider.dart';
+import '../providers/payment_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -189,7 +192,16 @@ class SettingsScreen extends StatelessWidget {
     );
 
     if (confirm == true) {
+      // Clear all provider data
+      if (context.mounted) {
+        Provider.of<CustomerProvider>(context, listen: false).clear();
+        Provider.of<TransactionProvider>(context, listen: false).clear();
+        Provider.of<PaymentProvider>(context, listen: false).clear();
+      }
+      
+      // Logout
       await Provider.of<AuthProvider>(context, listen: false).logout();
+      
       if (context.mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }

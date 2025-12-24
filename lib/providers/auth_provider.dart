@@ -8,10 +8,14 @@ class AuthProvider with ChangeNotifier {
   late final Account _account;
 
   models.Session? _session;
+  models.User? _currentUser;
   bool _loading = true;
   bool get loading => _loading;
 
   bool get isLoggedIn => _session != null;
+  
+  // Getter untuk userId
+  String? get userId => _currentUser?.$id;
 
   AuthProvider() {
     _initializeClient();
@@ -48,10 +52,12 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       
       _session = await _account.getSession(sessionId: 'current');
+      _currentUser = await _account.get(); // Ambil user data
       print('Session found: user is logged in');
     } catch (e) {
       print('No active session: $e');
       _session = null;
+      _currentUser = null;
     } finally {
       _loading = false;
       notifyListeners();
@@ -64,6 +70,7 @@ class AuthProvider with ChangeNotifier {
         email: email, 
         password: password,
       );
+      _currentUser = await _account.get(); // Ambil user data setelah login
       notifyListeners();
       return true;
     } catch (e) {
@@ -94,6 +101,7 @@ class AuthProvider with ChangeNotifier {
       print('Logout error: $e');
     } finally {
       _session = null;
+      _currentUser = null;
       notifyListeners();
     }
   }

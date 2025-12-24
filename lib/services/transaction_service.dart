@@ -13,11 +13,14 @@ class TransactionService {
     _databases = Databases(_client);
   }
 
-  Future<List<models.Document>> getTransactionsByCustomer(String customerId) async {
+  Future<List<models.Document>> getTransactionsByCustomer(String customerId, String userId) async {
     final response = await _databases.listDocuments(
       databaseId: dotenv.env['APPWRITE_DATABASE_ID']!,
       collectionId: dotenv.env['APPWRITE_COLLECTION_TRANSACTION']!,
-      queries: [Query.equal('customerId', customerId)],
+      queries: [
+        Query.equal('customerId', customerId),
+        Query.equal('userId', userId), // Filter by userId
+      ],
     );
     return response.documents;
   }
@@ -56,13 +59,14 @@ class TransactionService {
     );
   }
 
-  // Method baru untuk fetch semua transactions
-  Future<List<models.Document>> getAllTransactions() async {
+  // Method untuk fetch semua transactions dengan filter userId
+  Future<List<models.Document>> getAllTransactions(String userId) async {
     try {
       final response = await _databases.listDocuments(
         databaseId: dotenv.env['APPWRITE_DATABASE_ID']!,
         collectionId: dotenv.env['APPWRITE_COLLECTION_TRANSACTION']!,
         queries: [
+          Query.equal('userId', userId), // Filter by userId
           Query.orderDesc('\$createdAt'),
           Query.limit(1000),
         ],

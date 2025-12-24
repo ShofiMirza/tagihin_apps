@@ -1,14 +1,16 @@
 class Customer {
   final String id;
+  final String userId; // User ID pemilik customer
   final String nama;
-  final String noHp; // <-- ubah dari int ke String
+  final String noHp;
   final String? alamat;
   final String? catatan;
 
   Customer({
     required this.id,
+    required this.userId,
     required this.nama,
-    required this.noHp, // <-- ubah dari int ke String
+    required this.noHp,
     this.alamat,
     this.catatan,
   });
@@ -17,8 +19,9 @@ class Customer {
   factory Customer.fromJson(Map<String, dynamic> json) {
     return Customer(
       id: json['\$id'] ?? '',
+      userId: json['userId'] ?? '',
       nama: json['nama'] ?? '',
-      noHp: json['no_hp']?.toString() ?? '', // <-- ubah jadi string
+      noHp: json['no_hp']?.toString() ?? '',
       alamat: json['alamat'],
       catatan: json['catatan'],
     );
@@ -26,8 +29,9 @@ class Customer {
 
   Map<String, dynamic> toJson() {
     return {
+      'userId': userId,
       'nama': nama,
-      'no_hp': noHp, // <-- simpan sebagai string
+      'no_hp': noHp,
       'alamat': alamat,
       'catatan': catatan,
     };

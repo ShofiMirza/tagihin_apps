@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tagihin_apps/providers/transaction_provider.dart';
 import '../providers/payment_provider.dart';
+import '../providers/auth_provider.dart';
 import 'transaction_detail_screen.dart';
 import 'add_transaction_screen.dart';
 
@@ -28,10 +29,16 @@ class _CustomerTransactionListScreenState extends State<CustomerTransactionListS
   }
 
   Future<void> _refresh() async {
+    if (!mounted) return;
     setState(() => _loading = true);
-    await Provider.of<TransactionProvider>(context, listen: false)
-        .fetchTransactions(widget.customerId);
-    setState(() => _loading = false);
+    final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+    if (userId != null) {
+      await Provider.of<TransactionProvider>(context, listen: false)
+          .fetchTransactions(widget.customerId, userId);
+    }
+    if (mounted) {
+      setState(() => _loading = false);
+    }
   }
 
   @override
@@ -73,8 +80,11 @@ class _CustomerTransactionListScreenState extends State<CustomerTransactionListS
                                   ),
                                 );
                                 // Setelah edit, fetch ulang transaksi
-                                await Provider.of<TransactionProvider>(context, listen: false)
-                                    .fetchTransactions(widget.customerId);
+                                final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+                                if (userId != null) {
+                                  await Provider.of<TransactionProvider>(context, listen: false)
+                                      .fetchTransactions(widget.customerId, userId);
+                                }
                                 setState(() {});
                               } else if (value == 'delete') {
                                 final confirm = await showDialog(
@@ -89,8 +99,11 @@ class _CustomerTransactionListScreenState extends State<CustomerTransactionListS
                                   ),
                                 );
                                 if (confirm == true) {
-                                  await Provider.of<TransactionProvider>(context, listen: false)
-                                      .deleteTransaction(t.id, widget.customerId);
+                                  final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+                                  if (userId != null) {
+                                    await Provider.of<TransactionProvider>(context, listen: false)
+                                        .deleteTransaction(t.id, widget.customerId, userId);
+                                  }
                                   setState(() {});
                                 }
                               }
@@ -102,9 +115,11 @@ class _CustomerTransactionListScreenState extends State<CustomerTransactionListS
                           ),
                           onTap: () async {
                             // Ambil pembayaran dari PaymentProvider
-                            await Provider.of<PaymentProvider>(context, listen: false)
-                                .fetchPayments(t.id);
-                            final payments = Provider.of<PaymentProvider>(context, listen: false).payments;
+                            final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+                            if (userId != null) {
+                              await Provider.of<PaymentProvider>(context, listen: false)
+                                  .fetchPayments(t.id, userId);
+                            }
                             Navigator.push(
                               context,
                               MaterialPageRoute(
