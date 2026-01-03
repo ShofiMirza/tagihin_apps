@@ -81,9 +81,8 @@ class _WaReminderScreenState extends State<WaReminderScreen> {
     int totalSisa = 0;
     for (int i = 0; i < selectedNota.length; i++) {
       final t = selectedNota[i];
-      buffer.writeln('${i + 1}. ${t.deskripsi}');
-      buffer.writeln('   Tanggal: ${t.tanggal.day}/${t.tanggal.month}/${t.tanggal.year}');
-      buffer.writeln('   Sisa: Rp ${_formatNumber(t.sisa)}');
+      buffer.writeln('${i + 1}. Tanggal: ${t.tanggal.day}/${t.tanggal.month}/${t.tanggal.year}');
+      buffer.writeln('   Total: Rp ${_formatNumber(t.total)}');
       buffer.writeln();
       totalSisa += t.sisa;
     }
@@ -261,162 +260,156 @@ class _WaReminderScreenState extends State<WaReminderScreen> {
 
           // Transaction List
           Expanded(
-            child: Row(
-              children: [
-                // Left: Selection List
-                Expanded(
-                  flex: 1,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        right: BorderSide(color: Colors.grey.shade300),
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: unpaidTransactions.length,
+              itemBuilder: (context, index) {
+                final t = unpaidTransactions[index];
+                final isSelected = _selectedTransactions[t.id] ?? false;
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.green.shade50 : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected ? Colors.green : Colors.grey.shade300,
+                      width: isSelected ? 2.5 : 1,
+                    ),
+                    boxShadow: [
+                      if (isSelected)
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.2),
+                          spreadRadius: 1,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                    ],
+                  ),
+                  child: CheckboxListTile(
+                    value: isSelected,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedTransactions[t.id] = value ?? false;
+                        _updateMessagePreview();
+                      });
+                    },
+                    activeColor: Colors.green,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    title: Text(
+                      t.deskripsi,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Text(
-                            'Pilih Nota:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            itemCount: unpaidTransactions.length,
-                            itemBuilder: (context, index) {
-                              final t = unpaidTransactions[index];
-                              final isSelected = _selectedTransactions[t.id] ?? false;
-
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? Colors.green.shade50
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? Colors.green
-                                        : Colors.grey.shade300,
-                                    width: isSelected ? 2 : 1,
-                                  ),
-                                ),
-                                child: CheckboxListTile(
-                                  value: isSelected,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedTransactions[t.id] = value ?? false;
-                                      _updateMessagePreview();
-                                    });
-                                  },
-                                  title: Text(
-                                    t.deskripsi,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    'Sisa: Rp ${_formatNumber(t.sisa)}',
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Right: Message Preview
-                Expanded(
-                  flex: 1,
-                  child: Container(
-                    color: Colors.grey.shade50,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border(
-                              bottom: BorderSide(color: Colors.grey.shade300),
-                            ),
-                          ),
-                          child: Row(
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Icon(Icons.message, color: Colors.grey.shade700, size: 20),
-                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.calendar_today,
+                                size: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                              const SizedBox(width: 4),
                               Text(
-                                'Preview Pesan:',
+                                '${t.tanggal.day}/${t.tanggal.month}/${t.tanggal.year}',
                                 style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade700,
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        Expanded(
-                          child: selectedCount == 0
-                              ? Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.chat_bubble_outline,
-                                        size: 64,
-                                        color: Colors.grey.shade400,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'Pilih nota untuk melihat preview',
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              : SingleChildScrollView(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Colors.grey.shade300,
-                                      ),
-                                    ),
-                                    child: TextField(
-                                      controller: _messageController,
-                                      maxLines: null,
-                                      decoration: const InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: 'Pesan akan muncul di sini...',
-                                      ),
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                  ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.payments,
+                                size: 12,
+                                color: Colors.red.shade600,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Sisa: Rp ${_formatNumber(t.sisa)}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.red.shade700,
                                 ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Message Preview Section (only show if something is selected)
+          if (selectedCount > 0)
+            Container(
+              constraints: const BoxConstraints(maxHeight: 250),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                border: Border(
+                  top: BorderSide(color: Colors.grey.shade300, width: 1),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Icon(Icons.message, color: Colors.green.shade700, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Preview Pesan WhatsApp:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green.shade900,
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Text(
+                          _messageController.text,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
 
           // Action Button
           Container(

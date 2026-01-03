@@ -37,7 +37,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                     Text('• Pelanggan: Unlimited'),
                     Text('• WA Reminder/bulan: Unlimited'),
                     SizedBox(height: 12),
-                    Text('Harga: Rp 49.000 / 30 hari', style: TextStyle(fontWeight: FontWeight.w600)),
+                    Text('Harga: Rp 14.000 / 30 hari', style: TextStyle(fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -114,8 +114,83 @@ class _PremiumScreenState extends State<PremiumScreen> {
         throw Exception('Tidak bisa membuka halaman pembayaran');
       }
 
-      // After user returns, they can tap "cek status" to refresh
-      // or you can implement polling here if desired.
+      // Show success message with verification info
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Pembayaran Dibuat'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.orange.shade700, size: 20),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Silakan selesaikan pembayaran di halaman Midtrans.',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '⏳ Verifikasi Manual',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Premium akan aktif maksimal 1x24 jam setelah pembayaran berhasil.',
+                          style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Order ID: ${result.orderId}',
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(Icons.phone, size: 16, color: Colors.grey.shade600),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Butuh bantuan? Hubungi admin:\n0859-1065-47477',
+                          style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: Colors.grey.shade700),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Mengerti'),
+              ),
+            ],
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('Payment error: $e');
       setState(() => _error = 'Gagal memulai pembayaran: $e');
@@ -154,9 +229,18 @@ class _PremiumScreenState extends State<PremiumScreen> {
           Navigator.pop(context);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Status masih Free. Tunggu beberapa saat lagi atau pastikan pembayaran sudah settlement.'),
-              duration: Duration(seconds: 4),
+            SnackBar(
+              content: const Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('⏳ Status: Menunggu Verifikasi', style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 4),
+                  Text('Pembayaran Anda sedang diverifikasi. Premium akan aktif maksimal 1x24 jam.'),
+                ],
+              ),
+              backgroundColor: Colors.orange.shade700,
+              duration: const Duration(seconds: 5),
             ),
           );
         }

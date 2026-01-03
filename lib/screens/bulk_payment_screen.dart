@@ -263,7 +263,7 @@ class _BulkPaymentScreenState extends State<BulkPaymentScreen> {
                       dropdownColor: Colors.blue.shade700,
                       style: const TextStyle(color: Colors.white),
                       underline: Container(),
-                      items: ['Cash', 'Transfer', 'E-Wallet']
+                      items: ['Cash', 'Transfer']
                           .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                           .toList(),
                       onChanged: (value) {

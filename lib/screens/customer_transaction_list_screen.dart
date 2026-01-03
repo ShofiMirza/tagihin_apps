@@ -52,278 +52,300 @@ class _CustomerTransactionListScreenState extends State<CustomerTransactionListS
     return Scaffold(
       appBar: AppBar(
         title: Text('Transaksi'),
-        actions: [
-          if (unpaidCount > 1)
-            IconButton(
-              icon: Stack(
-                children: [
-                  const Icon(Icons.payments),
-                  if (unpaidCount > 0)
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          '$unpaidCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => BulkPaymentScreen(
-                      transactions: transactions,
-                      customerId: widget.customerId,
-                    ),
-                  ),
-                );
-                if (result == true) {
-                  await _refresh();
-                }
-              },
-              tooltip: 'Bayar Multiple Nota',
-            ),
-          if (unpaidCount > 0)
-            IconButton(
-              icon: Stack(
-                children: [
-                  const Icon(Icons.message),
-                  if (unpaidCount > 0)
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          '$unpaidCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              onPressed: () async {
-                // Dapatkan data customer
-                final customerProvider = Provider.of<CustomerProvider>(context, listen: false);
-                final customer = customerProvider.customers.firstWhere(
-                  (c) => c.id == widget.customerId,
-                  orElse: () => throw Exception('Customer not found'),
-                );
-
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => WaReminderScreen(
-                      transactions: transactions,
-                      customer: customer,
-                    ),
-                  ),
-                );
-              },
-              tooltip: 'Kirim Pengingat WA',
-            ),
-        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _refresh,
-              child: transactions.isEmpty
-                  ? const Center(child: Text('Belum ada transaksi'))
-                  : ListView.builder(
-                      itemCount: transactions.length,
-                      itemBuilder: (context, index) {
-                        final t = transactions[index];
-                        final isLunas = t.status.toLowerCase() == 'lunas';
-                        final statusColor = isLunas ? Colors.green : Colors.red;
-                        
-                        return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border(
-                              left: BorderSide(color: statusColor, width: 4),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
-                                spreadRadius: 1,
-                                blurRadius: 3,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            title: Text(
-                              t.deskripsi,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade600),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${t.tanggal.day}/${t.tanggal.month}/${t.tanggal.year}',
-                                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                                      ),
-                                    ],
+          : Column(
+              children: [
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _refresh,
+                    child: transactions.isEmpty
+                        ? const Center(child: Text('Belum ada transaksi'))
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            itemCount: transactions.length,
+                            itemBuilder: (context, index) {
+                              final t = transactions[index];
+                              final isLunas = t.status.toLowerCase() == 'lunas';
+                              final statusColor = isLunas ? Colors.green : Colors.red;
+                              
+                              return Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border(
+                                    left: BorderSide(color: statusColor, width: 4),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          'Total: Rp ${_formatNumber(t.total)}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: statusColor.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Text(
-                                          isLunas ? 'LUNAS' : 'Sisa: Rp ${_formatNumber(t.sisa)}',
-                                          style: TextStyle(
-                                            color: statusColor,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            trailing: PopupMenuButton<String>(
-                            onSelected: (value) async {
-                              if (value == 'edit') {
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => AddTransactionScreen(
-                                      customerId: widget.customerId,
-                                      editTransaction: t,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.1),
+                                      spreadRadius: 1,
+                                      blurRadius: 3,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  title: Text(
+                                    t.deskripsi,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
                                     ),
                                   ),
-                                );
-                                // Setelah edit, fetch ulang transaksi
-                                final userId = Provider.of<AuthProvider>(context, listen: false).userId;
-                                if (userId != null) {
-                                  await Provider.of<TransactionProvider>(context, listen: false)
-                                      .fetchTransactions(widget.customerId, userId);
-                                }
-                                setState(() {});
-                              } else if (value == 'delete') {
-                                final confirm = await showDialog(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    title: const Text('Hapus Transaksi?'),
-                                    content: const Text('Data akan dihapus permanen.'),
-                                    actions: [
-                                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
-                                      TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Hapus')),
-                                    ],
+                                  subtitle: Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade600),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '${t.tanggal.day}/${t.tanggal.month}/${t.tanggal.year}',
+                                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                'Total: Rp ${_formatNumber(t.total)}',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: statusColor.withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: Text(
+                                                isLunas ? 'LUNAS' : 'Sisa: Rp ${_formatNumber(t.sisa)}',
+                                                style: TextStyle(
+                                                  color: statusColor,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                );
-                                if (confirm == true) {
-                                  final userId = Provider.of<AuthProvider>(context, listen: false).userId;
-                                  if (userId != null) {
-                                    await Provider.of<TransactionProvider>(context, listen: false)
-                                        .deleteTransaction(t.id, widget.customerId, userId);
-                                  }
-                                  setState(() {});
-                                }
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                              const PopupMenuItem(value: 'delete', child: Text('Hapus')),
-                            ],
-                          ),
-                            onTap: () async {
-                              // Ambil pembayaran dari PaymentProvider
-                              final userId = Provider.of<AuthProvider>(context, listen: false).userId;
-                              if (userId != null) {
-                                await Provider.of<PaymentProvider>(context, listen: false)
-                                    .fetchPayments(t.id, userId);
-                              }
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => TransactionDetailScreen(
-                                    transaction: t,
-                                  ),
+                                  trailing: PopupMenuButton<String>(
+                                  onSelected: (value) async {
+                                    if (value == 'edit') {
+                                      await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => AddTransactionScreen(
+                                            customerId: widget.customerId,
+                                            editTransaction: t,
+                                          ),
+                                        ),
+                                      );
+                                      // Setelah edit, fetch ulang transaksi
+                                      final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+                                      if (userId != null) {
+                                        await Provider.of<TransactionProvider>(context, listen: false)
+                                            .fetchTransactions(widget.customerId, userId);
+                                      }
+                                      setState(() {});
+                                    } else if (value == 'delete') {
+                                      final confirm = await showDialog(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          title: const Text('Hapus Transaksi?'),
+                                          content: const Text('Data akan dihapus permanen.'),
+                                          actions: [
+                                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+                                            TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Hapus')),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm == true) {
+                                        final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+                                        if (userId != null) {
+                                          await Provider.of<TransactionProvider>(context, listen: false)
+                                              .deleteTransaction(t.id, widget.customerId, userId);
+                                        }
+                                        setState(() {});
+                                      }
+                                    }
+                                  },
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                    const PopupMenuItem(value: 'delete', child: Text('Hapus')),
+                                  ],
+                                ),
+                                  onTap: () async {
+                                    // Ambil pembayaran dari PaymentProvider
+                                    final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+                                    if (userId != null) {
+                                      await Provider.of<PaymentProvider>(context, listen: false)
+                                          .fetchPayments(t.id, userId);
+                                    }
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => TransactionDetailScreen(
+                                          transaction: t,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               );
                             },
                           ),
-                        );
-                      },
-                    ),
+                  ),
+                ),
+                // Bottom Action Buttons
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        spreadRadius: 1,
+                        blurRadius: 5,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // WA Reminder Button (Primary)
+                      if (unpaidCount > 0)
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              // Dapatkan data customer
+                              final customerProvider = Provider.of<CustomerProvider>(context, listen: false);
+                              final customer = customerProvider.customers.firstWhere(
+                                (c) => c.id == widget.customerId,
+                                orElse: () => throw Exception('Customer not found'),
+                              );
+
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => WaReminderScreen(
+                                    transactions: transactions,
+                                    customer: customer,
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF25D366),
+                              foregroundColor: Colors.white,
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            icon: const Icon(Icons.message, size: 22),
+                            label: Text(
+                              'Kirim Pengingat WhatsApp ($unpaidCount)',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (unpaidCount > 0) const SizedBox(height: 12),
+                      // Action Row
+                      Row(
+                        children: [
+                          // Bayar Semua Button
+                          if (unpaidCount > 1)
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  final result = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => BulkPaymentScreen(
+                                        transactions: transactions,
+                                        customerId: widget.customerId,
+                                      ),
+                                    ),
+                                  );
+                                  if (result == true) {
+                                    await _refresh();
+                                  }
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFFD32F2F),
+                                  side: const BorderSide(color: Color(0xFFD32F2F), width: 2),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.payments),
+                                label: const Text(
+                                  'Bayar Semua Nota',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ),
+                          if (unpaidCount > 1) const SizedBox(width: 12),
+                          // Tambah Transaksi Button
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AddTransactionScreen(customerId: widget.customerId),
+                                  ),
+                                );
+                                if (result == true) {
+                                  await _refresh();
+                                  // Jika ada perubahan transaksi, beri tahu parent
+                                  if (mounted) Navigator.pop(context, true);
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFD32F2F),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              icon: const Icon(Icons.add, size: 26, weight: 700),
+                              label: const Text(
+                                'Tambah Nota',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddTransactionScreen(customerId: widget.customerId),
-            ),
-          );
-          if (result == true) {
-            await _refresh();
-            // Jika ada perubahan transaksi, beri tahu parent
-            if (mounted) Navigator.pop(context, true);
-          }
-        },
-        child: const Icon(Icons.add),
-      ),
     );
   }
 

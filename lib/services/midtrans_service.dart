@@ -26,7 +26,7 @@ class MidtransService {
       'userId': userId,
       'email': email,
       'itemId': 'premium-1month',
-      'amount': 49000,
+      'amount': 14000,
     });
 
     try {

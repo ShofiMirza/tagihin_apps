@@ -108,6 +108,7 @@ class SettingsScreen extends StatelessWidget {
                       context: context,
                       applicationName: 'Tagihin',
                       applicationVersion: '1.0.0',
+                      applicationLegalese: '© 2026 SobaToko\nSolusi Digital untuk Toko Anda',
                       applicationIcon: const Icon(
                         Icons.account_balance_wallet,
                         size: 48,
