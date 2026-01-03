@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
 import '../providers/customer_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/payment_provider.dart';
+import '../providers/subscription_provider.dart';
+import 'premium_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -20,47 +23,54 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           // Profile Section
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.red.shade100,
-                    child: Icon(
-                      Icons.person,
-                      size: 30,
-                      color: Colors.red.shade700,
+          Consumer<AuthProvider>(
+            builder: (context, auth, _) => Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.red.shade100,
+                      child: Icon(
+                        Icons.person,
+                        size: 30,
+                        color: Colors.red.shade700,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Admin User',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            auth.userName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        Text(
-                          'admin@tagihin.com',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
+                          Text(
+                            auth.userEmail,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
           
+          const SizedBox(height: 16),
+
+          // Premium Section
+          _buildPremiumCard(context),
+
           const SizedBox(height: 16),
 
           // Settings Options
@@ -143,6 +153,104 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildPremiumCard(BuildContext context) {
+    final subscription = context.watch<SubscriptionProvider>();
+    final customerProvider = context.watch<CustomerProvider>();
+    final isPremium = subscription.isPremium;
+    
+    // Get current usage stats
+    final customerCount = customerProvider.customerCount;
+    final customerLimit = subscription.getCustomerLimit();
+    final waCount = subscription.profile?.waReminderCount ?? 0;
+    final waLimit = subscription.getWAReminderLimit();
+
+    return Card(
+      color: isPremium ? const Color(0xFFFFF3E0) : Colors.white,
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isPremium ? Colors.orange.shade100 : Colors.amber.shade100,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            isPremium ? Icons.workspace_premium : Icons.star_outline,
+            color: isPremium ? Colors.orange : Colors.amber.shade700,
+            size: 28,
+          ),
+        ),
+        title: Text(
+          isPremium ? 'Premium Aktif' : 'Upgrade ke Premium',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isPremium ? Colors.orange.shade900 : Colors.black87,
+          ),
+        ),
+        subtitle: isPremium
+            ? Text(
+                'Berlaku hingga ${_formatDate(subscription.profile?.premiumUntil)}',
+                style: TextStyle(color: Colors.orange.shade700),
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 4),
+                  Text(
+                    'Pelanggan: $customerCount/$customerLimit',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: customerCount >= customerLimit ? Colors.red : Colors.grey.shade700,
+                      fontWeight: customerCount >= customerLimit ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                  Text(
+                    'WA Reminder: $waCount/$waLimit bulan ini',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: waCount >= waLimit ? Colors.red : Colors.grey.shade700,
+                      fontWeight: waCount >= waLimit ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Premium: unlimited semua',
+                    style: TextStyle(fontSize: 11, color: Colors.green),
+                  ),
+                ],
+              ),
+        trailing: isPremium
+            ? Chip(
+                label: const Text(
+                  'PREMIUM',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                backgroundColor: Colors.orange,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              )
+            : const Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: isPremium
+            ? null
+            : () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PremiumScreen(),
+                  ),
+                );
+              },
+      ),
+    );
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '-';
+    return DateFormat('dd MMM yyyy').format(date);
   }
 
   Widget _buildSettingsTile({

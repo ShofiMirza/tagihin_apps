@@ -78,7 +78,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
       final total = int.tryParse(_totalController.text) ?? 0;
       final dp = int.tryParse(_dpController.text) ?? 0;
-      final sisa = total - dp;
 
       final userId = Provider.of<AuthProvider>(context, listen: false).userId;
       if (userId == null) {
@@ -90,18 +89,49 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         return;
       }
 
-      final trx = Transaction(
-        id: widget.editTransaction?.id ?? '',
-        userId: widget.editTransaction?.userId ?? userId,
-        customerId: widget.customerId,
-        tanggal: widget.editTransaction?.tanggal ?? DateTime.now(),
-        deskripsi: _deskripsiController.text,
-        total: total,
-        dp: dp,
-        sisa: sisa,
-        status: sisa == 0 ? 'lunas' : 'belumlunas',
-        fotoNotaUrl: fotoNotaUrl, // <-- ini yang dikirim ke database
-      );
+      // Saat EDIT transaksi yang sudah ada pembayaran:
+      // - Pertahankan dp, sisa, dan status yang sudah ada (sudah dihitung dari payment history)
+      // - Hanya update deskripsi, total, dan foto
+      // - Jika total berubah, sesuaikan sisa (sisa_baru = total_baru - dp - total_payments)
+      // Saat ADD transaksi baru:
+      // - Hitung sisa dan status dari total - dp
+      final Transaction trx;
+      
+      if (widget.editTransaction != null) {
+        // MODE EDIT: Pertahankan dp, sisa, status yang sudah dihitung dari payment
+        // Jika total berubah, sesuaikan sisa
+        final totalDiff = total - widget.editTransaction!.total;
+        final newSisa = widget.editTransaction!.sisa + totalDiff;
+        final newStatus = newSisa <= 0 ? 'lunas' : 'belumlunas';
+        
+        trx = Transaction(
+          id: widget.editTransaction!.id,
+          userId: widget.editTransaction!.userId,
+          customerId: widget.customerId,
+          tanggal: widget.editTransaction!.tanggal,
+          deskripsi: _deskripsiController.text,
+          total: total,
+          dp: widget.editTransaction!.dp, // ✅ Pertahankan dp asli
+          sisa: newSisa, // ✅ Sesuaikan jika total berubah
+          status: newStatus, // ✅ Update status berdasarkan sisa baru
+          fotoNotaUrl: fotoNotaUrl ?? widget.editTransaction!.fotoNotaUrl,
+        );
+      } else {
+        // MODE ADD: Hitung sisa dan status baru
+        final sisa = total - dp;
+        trx = Transaction(
+          id: '',
+          userId: userId,
+          customerId: widget.customerId,
+          tanggal: DateTime.now(),
+          deskripsi: _deskripsiController.text,
+          total: total,
+          dp: dp,
+          sisa: sisa,
+          status: sisa == 0 ? 'lunas' : 'belumlunas',
+          fotoNotaUrl: fotoNotaUrl,
+        );
+      }
 
       if (widget.editTransaction != null) {
         await Provider.of<TransactionProvider>(context, listen: false).updateTransaction(trx);
@@ -138,8 +168,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
               TextFormField(
                 controller: _dpController,
-                decoration: const InputDecoration(labelText: 'DP'),
+                decoration: InputDecoration(
+                  labelText: 'DP',
+                  helperText: widget.editTransaction != null 
+                      ? 'DP tidak bisa diubah saat edit'
+                      : null,
+                ),
                 keyboardType: TextInputType.number,
+                enabled: widget.editTransaction == null, // ✅ Disable saat edit
                 validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 24),

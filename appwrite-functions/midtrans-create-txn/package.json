@@ -1,0 +1,16 @@
+{
+  "name": "midtrans-create-txn",
+  "version": "1.0.0",
+  "description": "Appwrite Function to create Midtrans Snap transaction",
+  "type": "module",
+  "main": "src/main.js",
+  "scripts": {
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "node-appwrite": "^14.1.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3"
+  }
+}

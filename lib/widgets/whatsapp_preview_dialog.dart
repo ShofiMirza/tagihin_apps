@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/whatsapp_service.dart';
 import '../models/transaction.dart';
 import '../models/payment.dart';
 import '../models/customer.dart';
+import '../providers/subscription_provider.dart';
+import '../providers/auth_provider.dart';
 
 class WhatsAppPreviewDialog extends StatefulWidget {
   final Customer customer;
@@ -217,6 +220,13 @@ class _WhatsAppPreviewDialogState extends State<WhatsAppPreviewDialog> {
     setState(() => _sending = false);
 
     if (success) {
+      // === INCREMENT WA COUNTER AFTER SUCCESSFUL SEND ===
+      final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+      if (userId != null) {
+        await Provider.of<SubscriptionProvider>(context, listen: false)
+            .incrementWACount(userId);
+      }
+      
       Navigator.pop(context, true);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

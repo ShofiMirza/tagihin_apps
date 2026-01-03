@@ -7,6 +7,7 @@ class CustomerProvider with ChangeNotifier {
   List<Customer> _customers = [];
 
   List<Customer> get customers => _customers;
+  int get customerCount => _customers.length;
 
   Future<void> fetchCustomers(String userId) async {
     final data = await _service.getCustomers(userId);

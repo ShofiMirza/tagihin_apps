@@ -16,6 +16,10 @@ class AuthProvider with ChangeNotifier {
   
   // Getter untuk userId
   String? get userId => _currentUser?.$id;
+  
+  // Getter untuk user info
+  String get userName => _currentUser?.name ?? 'User';
+  String get userEmail => _currentUser?.email ?? 'user@email.com';
 
   AuthProvider() {
     _initializeClient();

@@ -5,6 +5,7 @@ import 'providers/customer_provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/payment_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/subscription_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/main_navigation_screen.dart';
@@ -40,9 +41,23 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CustomerProvider()),
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
+        ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, auth, _) {
+          // Ensure subscription profile is loaded/validated when logged in
+          if (!auth.loading && auth.isLoggedIn) {
+            try {
+              final sub = Provider.of<SubscriptionProvider>(context, listen: false);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                sub.loadProfile(auth.userId ?? '');
+                sub.checkPremiumExpiry(auth.userId ?? '');
+                sub.ensureWaCounterIntegrity(auth.userId ?? '');
+              });
+            } catch (e) {
+              // ignore
+            }
+          }
           // Error handling untuk auth
           return MaterialApp(
             title: 'Tagihin',

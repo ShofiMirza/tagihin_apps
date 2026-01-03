@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../models/customer.dart';
 import '../providers/customer_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/subscription_provider.dart';
+import 'premium_screen.dart';
 
 class AddCustomerScreen extends StatefulWidget {
   final Customer? editCustomer;
@@ -52,6 +54,48 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
           const SnackBar(content: Text('Error: User tidak terautentikasi')),
         );
         return;
+      }
+
+      // === CHECK LIMIT FOR NEW CUSTOMER ===
+      if (widget.editCustomer == null) { // Only check limit for new customer, not edit
+        final subProvider = Provider.of<SubscriptionProvider>(context, listen: false);
+        final customerProvider = Provider.of<CustomerProvider>(context, listen: false);
+        final currentCount = customerProvider.customerCount;
+        
+        if (!subProvider.canAddCustomer(currentCount)) {
+          setState(() => _loading = false);
+          if (!mounted) return;
+          
+          // Show upgrade dialog
+          final shouldUpgrade = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Batas Pelanggan Tercapai'),
+              content: Text(
+                'Anda sudah mencapai batas ${subProvider.getCustomerLimit()} pelanggan untuk akun Free.\\n\\n'
+                'Upgrade ke Premium untuk tambah pelanggan unlimited!',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Nanti'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Upgrade Sekarang'),
+                ),
+              ],
+            ),
+          );
+          
+          if (shouldUpgrade == true && mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const PremiumScreen()),
+            );
+          }
+          return;
+        }
       }
 
       final customer = Customer(

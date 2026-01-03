@@ -5,6 +5,8 @@ import '../providers/transaction_provider.dart';
 import '../providers/payment_provider.dart';
 import '../providers/customer_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/subscription_provider.dart';
+import 'premium_screen.dart';
 import '../models/transaction.dart';
 import '../models/customer.dart';
 import 'add_payment_screen.dart';
@@ -27,6 +29,22 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   void initState() {
     super.initState();
     _refresh();
+  }
+
+  // Helper function untuk cek apakah foto valid
+  bool _hasFoto(Transaction transaction) {
+    if (transaction.fotoNotaUrl == null) return false;
+    
+    final url = transaction.fotoNotaUrl!.trim().toLowerCase();
+    
+    // Daftar value yang dianggap "tidak ada foto"
+    if (url.isEmpty) return false;
+    if (url == 'null') return false;
+    if (url == 'no_photo') return false;
+    if (url == 'no_image') return false;
+    if (url == '-') return false;
+    
+    return true;
   }
 
   Future<void> _refresh() async {
@@ -177,32 +195,182 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     ),
                   ),
 
-                  // Tombol Lihat Foto
-                  if (transaction.fotoNotaUrl != null && 
-                      transaction.fotoNotaUrl!.isNotEmpty && 
-                      transaction.fotoNotaUrl != 'null')
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => FullScreenImageViewer(
-                                imageUrl: '${dotenv.env['APPWRITE_ENDPOINT']}/storage/buckets/${dotenv.env['APPWRITE_BUCKET_ID']}/files/${transaction.fotoNotaUrl}/view?project=${dotenv.env['APPWRITE_PROJECT_ID']}',
-                                title: 'Foto Nota - ${transaction.deskripsi}',
-                              ),
+                  // Foto Nota Card
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Card(
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.image_outlined,
+                                  color: Colors.grey.shade700,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Foto Nota',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
-                          );
-                        },
-                        icon: const Icon(Icons.image),
-                        label: const Text('Lihat Foto Nota'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                          side: BorderSide(color: Colors.grey.shade400),
+                            const SizedBox(height: 12),
+                            if (_hasFoto(transaction))
+                              Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 60,
+                                        height: 60,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: Colors.grey.shade300),
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(7),
+                                          child: Image.network(
+                                            '${dotenv.env['APPWRITE_ENDPOINT']}/storage/buckets/${dotenv.env['APPWRITE_BUCKET_ID']}/files/${transaction.fotoNotaUrl}/view?project=${dotenv.env['APPWRITE_PROJECT_ID']}',
+                                            fit: BoxFit.cover,
+                                            loadingBuilder: (context, child, loadingProgress) {
+                                              if (loadingProgress == null) return child;
+                                              return Center(
+                                                child: SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    value: loadingProgress.expectedTotalBytes != null
+                                                        ? loadingProgress.cumulativeBytesLoaded /
+                                                            loadingProgress.expectedTotalBytes!
+                                                        : null,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Icon(Icons.broken_image, color: Colors.grey.shade400);
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Icon(Icons.check_circle, color: Colors.green, size: 16),
+                                                const SizedBox(width: 4),
+                                                const Text(
+                                                  'Foto tersedia',
+                                                  style: TextStyle(
+                                                    color: Colors.green,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Tap untuk melihat ukuran penuh',
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => FullScreenImageViewer(
+                                              imageUrl: '${dotenv.env['APPWRITE_ENDPOINT']}/storage/buckets/${dotenv.env['APPWRITE_BUCKET_ID']}/files/${transaction.fotoNotaUrl}/view?project=${dotenv.env['APPWRITE_PROJECT_ID']}',
+                                              title: 'Foto Nota - ${transaction.deskripsi}',
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.zoom_in, size: 20),
+                                      label: const Text('Lihat Foto'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue.shade600,
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            else
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.grey.shade300),
+                                    ),
+                                    child: Icon(
+                                      Icons.image_not_supported_outlined,
+                                      color: Colors.grey.shade400,
+                                      size: 30,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(Icons.cancel_outlined, color: Colors.red.shade400, size: 16),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Foto tidak tersedia',
+                                              style: TextStyle(
+                                                color: Colors.red.shade400,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Transaksi ini tidak memiliki foto nota',
+                                          style: TextStyle(
+                                            color: Colors.grey.shade600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
                         ),
                       ),
                     ),
+                  ),
 
                   // Progress Bar
                   Container(
@@ -532,6 +700,40 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
   // Method untuk show WhatsApp preview (HANYA SATU)
   Future<void> _showWhatsAppPreview() async {
+    // === CHECK WA REMINDER LIMIT ===
+    final subProvider = Provider.of<SubscriptionProvider>(context, listen: false);
+    if (!subProvider.canSendWAReminder()) {
+      final limit = subProvider.getWAReminderLimit();
+      final shouldUpgrade = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Batas Reminder Tercapai'),
+          content: Text(
+            'Anda sudah mencapai batas $limit reminder WhatsApp per bulan untuk akun Free.\n\n'
+            'Upgrade ke Premium untuk kirim reminder unlimited!',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Nanti'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Upgrade Sekarang'),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldUpgrade == true && mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const PremiumScreen()),
+        );
+      }
+      return;
+    }
+    
     final payments = Provider.of<PaymentProvider>(context, listen: false).payments;
     
     // Ambil data customer
