@@ -39,6 +39,11 @@ migrate_working_dir/
 .env.production
 .env.staging
 
+# Keystore (NEVER commit to git!)
+*.jks
+*.keystore
+key.properties
+
 # Symbolication related
 app.*.symbols
 

@@ -13,9 +13,12 @@ import 'screens/main_navigation_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await dotenv.load();
+    await dotenv.load(fileName: ".env");
   } catch (e) {
     print('Error loading .env: $e');
+    // Set default values if .env fails to load
+    dotenv.env['APPWRITE_PROJECT_ID'] = dotenv.env['APPWRITE_PROJECT_ID'] ?? '';
+    dotenv.env['APPWRITE_ENDPOINT'] = dotenv.env['APPWRITE_ENDPOINT'] ?? 'https://cloud.appwrite.io/v1';
   }
   runApp(const MyApp()); 
 }
